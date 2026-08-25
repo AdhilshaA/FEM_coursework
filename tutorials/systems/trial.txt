@@ -1,0 +1,41 @@
+# =================== trial ===================
+# ----------------------------------------------------
+# Lines starting with '#' are comments and will be ignored when reading the file.
+# Lines starting with '##' are variable names and types, followed by their values which will be read when reading the file.
+# ----------------------------------------------------
+## n_elements int
+2
+## n_nodes int
+6
+## connectivity_array list_of_lists_int
+[1, 2, 3, 4]
+[1, 2, 5, 6]
+## element_type str
+truss
+## A_vector list_float
+200.0
+200.0
+## E_vector list_float
+200.0
+200.0
+## L_vector list_float
+200.0
+200.0
+## theta_deg_vector list_float
+200.0
+200.0
+## force_vector list_float_or_None
+None
+None
+None
+None
+0.0
+0.0
+## displacement_vector list_float_or_None
+0.0
+0.0
+0.0
+0.0
+None
+None
+# ======================= END =======================
