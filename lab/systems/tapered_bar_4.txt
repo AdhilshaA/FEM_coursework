@@ -1,0 +1,46 @@
+# =================== tapered_bar_4 ===================
+# ----------------------------------------------------
+# Lines starting with '#' are comments and will be ignored when reading the file.
+# Lines starting with '##' are variable names and types, followed by their values which will be read when reading the file.
+# In case of values for multiple elements / nodes, enter them one line after another (for e.g.: A_vector, E_vector, L_vector, theta_deg_vector, force_vector, displacement_vector)
+# In case of multiple values for a single element / node, enter them in a list format (for e.g.: connectivity_array)
+# ----------------------------------------------------
+## n_elements int
+4
+## n_nodes int
+5
+## connectivity_array list_of_lists_int
+[1, 2]
+[2, 3]
+[3, 4]
+[4, 5]
+## element_type str
+bar
+## A_vector list_float
+56.25
+48.75
+41.25
+33.75
+## E_vector list_float
+210000.0
+210000.0
+210000.0
+210000.0
+## L_vector list_float
+125.0
+125.0
+125.0
+125.0
+## force_vector list_float_or_None
+None
+0
+0
+0
+-20000.0
+## displacement_vector list_float_or_None
+0
+None
+None
+None
+None
+# ======================= END =======================
