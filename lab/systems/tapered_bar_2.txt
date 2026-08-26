@@ -18,15 +18,15 @@ bar
 52.5
 37.5
 ## E_vector list_float
-210000.0
-210000.0
+1
+1
 ## L_vector list_float
 250.0
 250.0
 ## force_vector list_float_or_None
 None
 0
--20000.0
+20000.0
 ## displacement_vector list_float_or_None
 0
 None
