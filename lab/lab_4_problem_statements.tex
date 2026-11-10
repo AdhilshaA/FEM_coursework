@@ -1,0 +1,187 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{siunitx}
+
+\title{Lab 4: Constant Strain Triangle (CST) Element and FEM Assembly}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduction}
+
+This laboratory exercise introduces the Constant Strain Triangle (CST)
+finite element for two-dimensional, linear elastic, plane-stress analysis.
+The three problems below demonstrate the formulation of a single CST
+element, verification using a patch test, and assembly of a CST model for a
+cantilever beam.
+
+Unless otherwise stated, the material is assumed to be linear, isotropic, and
+elastic under plane-stress conditions. The calculations use consistent
+N--mm--MPa units. Therefore, the beam dimensions given in metres are written
+as millimetres in the numerical model.
+
+\section{Problem 1: Single CST Element}
+
+\subsection*{Problem statement}
+
+Analyse one triangular Constant Strain Triangle element using the finite
+element method. Calculate the element area, strain--displacement matrix,
+material constitutive matrix, element stiffness matrix, nodal displacements,
+strains, and stresses. Calculate the support reactions and compare the
+computed response with the expected analytical behaviour.
+
+\subsection*{Given values}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Element type & Constant Strain Triangle (CST) \\
+Node 1 & $(0,0)\ \si{\milli\metre}$ \\
+Node 2 & $(1,0)\ \si{\milli\metre}$ \\
+Node 3 & $(0,1)\ \si{\milli\metre}$ \\
+Young's modulus, $E$ & $\SI{200000}{\mega\pascal}$ \\
+Poisson's ratio, $\nu$ & $0.30$ \\
+Thickness, $t$ & $\SI{1}{\milli\metre}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The boundary conditions are
+\[
+u_1=v_1=0,\qquad v_2=0.
+\]
+The applied load is a vertical force of
+\[
+F_{y3}=-\SI{100}{\newton}
+\]
+at Node 3.
+
+\section{Problem 2: CST Patch Test}
+
+\subsection*{Problem statement}
+
+Perform a patch test on a unit square divided into two triangular CST
+elements. Prescribe a linear displacement field at the four nodes, calculate
+the strain in each element, and compare the numerical strain with the exact
+strain obtained by differentiating the prescribed displacement field. The
+test is used to verify that the CST formulation reproduces a compatible
+linear displacement field exactly.
+
+\subsection*{Given values}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ccl}
+\toprule
+\textbf{Node} & \textbf{Coordinates} & \textbf{Prescribed displacement} \\
+\midrule
+1 & $(0,0)\ \si{\milli\metre}$ & $(u_1,v_1)=(0,0)\ \si{\milli\metre}$ \\
+2 & $(1,0)\ \si{\milli\metre}$ & $(u_2,v_2)=(0.001,0)\ \si{\milli\metre}$ \\
+3 & $(1,1)\ \si{\milli\metre}$ & $(u_3,v_3)=(0.001,0.002)\ \si{\milli\metre}$ \\
+4 & $(0,1)\ \si{\milli\metre}$ & $(u_4,v_4)=(0,0.002)\ \si{\milli\metre}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The element connectivity is
+\[
+\text{Element 1}=(1,2,3),\qquad
+\text{Element 2}=(1,3,4).
+\]
+
+The prescribed displacement field is
+\[
+u(x,y)=0.001x,\qquad v(x,y)=0.002y.
+\]
+Hence, the exact engineering strain is
+\[
+\boldsymbol{\varepsilon}_{\mathrm{exact}}
+ =
+\begin{bmatrix}
+\varepsilon_x\\
+\varepsilon_y\\
+\gamma_{xy}
+\end{bmatrix}
+ =
+\begin{bmatrix}
+0.001\\
+0.002\\
+0
+\end{bmatrix}.
+\]
+
+The material properties are
+\[
+E=\SI{200000}{\mega\pascal},\qquad
+\nu=0.30,\qquad
+t=\SI{1}{\milli\metre},
+\]
+with plane-stress behaviour.
+
+\section{Problem 3: Cantilever Beam Using CST Elements}
+
+\subsection*{Problem statement}
+
+Model a rectangular cantilever beam using triangular CST elements. Generate a
+structured mesh, divide every rectangular mesh cell into two triangles,
+assemble the global stiffness matrix, apply the fixed-end boundary
+conditions, and calculate the vertical displacement at the loaded tip.
+Repeat the analysis for progressively finer meshes and compare the finite
+element tip displacement with the Euler--Bernoulli analytical solution.
+
+\subsection*{Given values}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Beam length, $L$ & $\SI{1}{\metre}=\SI{1000}{\milli\metre}$ \\
+Beam height, $H$ & $\SI{0.1}{\metre}=\SI{100}{\milli\metre}$ \\
+Thickness, $t$ & $\SI{1}{\milli\metre}$ \\
+Young's modulus, $E$ & $\SI{210000}{\mega\pascal}$ \\
+Poisson's ratio, $\nu$ & $0.30$ \\
+Applied tip load, $F_y$ & $-\SI{100}{\newton}$ \\
+Left-edge boundary condition & $u=v=0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mesh must contain at least 10 segments along the beam length and 1--2
+segments through its height. The mesh-refinement study uses the following
+configurations:
+\[
+(N_x,N_y)=(10,2),\ (20,4),\ (40,8),\ (80,16),
+\]
+where $N_x$ is the number of longitudinal segments and $N_y$ is the number
+of height segments.
+
+For comparison, calculate the second moment of area and analytical tip
+displacement from
+\[
+I=\frac{tH^3}{12},
+\qquad
+\delta_{\mathrm{tip}}
+=\frac{|F_y|L^3}{3EI}.
+\]
+
+\section*{Expected discussion}
+
+For each problem, report the calculated matrices and numerical results.
+Discuss whether the single-element and patch-test results agree with the
+analytical values. For the cantilever, report the mesh-dependent tip
+displacement and percentage error. Explain why a coarse CST mesh is
+typically too stiff in bending and why mesh refinement improves the result.
+
+\end{document}

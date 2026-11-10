@@ -1,0 +1,35 @@
+MECHANICAL APDL MESH SENSITIVITY PROCEDURE
+==========================================
+
+Run each relevant input file repeatedly with:
+
+  ESIZE,20
+  ESIZE,10
+  ESIZE,5
+  ESIZE,2.5
+  ESIZE,1.25
+
+The ESIZE command is in the PREP7 section immediately before AMESH,ALL.
+Change only that value, rerun the file, and record:
+
+  mesh size
+  number of nodes/elements
+  maximum SXY for Q1
+  maximum principal stress for Q2
+  Kt = peak stress / 100 MPa
+
+For better accuracy near the hole, use LESIZE on the hole boundary rather
+than making the entire 300 mm plate very fine. In the circular-hole files,
+select the hole lines after the Boolean subtraction and use, for example:
+
+  LSEL,S,LOC,X,-10,10
+  LESIZE,ALL,,,32
+  LSEL,ALL
+
+The exact line selection depends on the line numbering shown by LPLOT.
+Always verify the selected lines graphically before meshing.
+
+Do not call the result converged merely because displacement has stabilized.
+For this assignment, track the peak stress and Kt around the hole. A change
+below about 5 percent between the two finest meshes is a reasonable student
+reporting criterion, but state the criterion explicitly.

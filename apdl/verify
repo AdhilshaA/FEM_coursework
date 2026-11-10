@@ -1,0 +1,18 @@
+/CLEAR,START
+/PREP7
+BLC4,-150,-150,300,300
+CYL4,0,0,10,0,360
+ASBA,1,2
+APLOT
+! a square plate with a circular hole
+
+
+/PNUM,LINE,1
+LPLOT
+
+
+
+/PREP7
+LSEL,S,LOC,X,-10,10
+/PNUM,LINE,1
+LPLOT
