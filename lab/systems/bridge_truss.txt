@@ -1,0 +1,104 @@
+# =================== bridge_truss ===================
+# ----------------------------------------------------
+# Lines starting with '#' are comments and will be ignored when reading the file.
+# Lines starting with '##' are variable names and types, followed by their values which will be read when reading the file.
+# In case of values for multiple elements / nodes, enter them one line after another (for e.g.: A_vector, E_vector, L_vector, theta_deg_vector, force_vector, displacement_vector)
+# In case of multiple values for a single element / node, enter them in a list format (for e.g.: connectivity_array)
+# ----------------------------------------------------
+## n_elements int
+11
+## n_nodes int
+14
+## connectivity_array list_of_lists_int
+[1, 2, 3 ,4]
+[3, 4, 5, 6]
+[5, 6, 7, 8]
+[1, 2, 9, 10]
+[3, 4, 9, 10]
+[3, 4, 11, 12]
+[5, 6, 11, 12]
+[5, 6, 13, 14]
+[7, 8, 13, 14]
+[9, 10, 11, 12]
+[11, 12, 13, 14]
+## element_type str
+truss
+## A_vector list_float
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+3250.0
+## E_vector list_float
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+200000.0
+## L_vector list_float
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+3600.0
+## theta_deg_vector list_float
+0.0
+0.0
+0.0
+60.0
+120.0
+60.0
+120.0
+60.0
+120.0
+0.0
+0.0
+## force_vector list_float_or_None
+None
+280000.0
+None
+210000.0
+None
+280000.0
+None
+360000.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+## displacement_vector list_float_or_None
+0.0
+0.0
+None
+None
+None
+None
+None
+0.0
+None
+None
+None
+None
+None
+None
+# ======================= END =======================

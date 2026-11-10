@@ -93,6 +93,7 @@ dependencies:
   - qtwebchannel=6.11.0=h5895b07_1
   - qtwebsockets=6.11.0=he7f7b8d_1
   - setuptools=83.0.0=py314haa95532_0
+  - scipy
   - sip=6.15.1=py314h9561cc3_0
   - six=1.17.0=py314haa95532_0
   - sqlite=3.53.2=hee5a0db_0
