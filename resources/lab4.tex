@@ -1,0 +1,571 @@
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title{LAB 4:  CST Element and FEM Assembly}
+% \date{October 7, 2026}
+
+%%
+\author{Adhilsha A (SE25PCSE007)}
+\maketitle
+
+\tableofcontents
+
+\section{Single CST Element}
+
+The objective is to  calculate the element area, strain-displacement matrix,
+material constitutive matrix, element stiffness matrix, nodal displacements,
+strains, and stresses for a triangular Constant Strain Triangle element using the finite
+element method. We will also calculate the support reactions and compare the
+computed response with the expected analytical behaviour. The system is given as:
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Element type & Constant Strain Triangle (CST) \\
+Node 1 & $(0,0)\ \si{\milli\metre}$ \\
+Node 2 & $(1,0)\ \si{\milli\metre}$ \\
+Node 3 & $(0,1)\ \si{\milli\metre}$ \\
+Young's modulus, $E$ & $\SI{200000}{\mega\pascal}$ \\
+Poisson's ratio, $\nu$ & $0.30$ \\
+Thickness, $t$ & $\SI{1}{\milli\metre}$ \\
+Analysis assumption & Linear elastic plane stress \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Code}
+
+The matlab code along with the comments are added below:
+\begin{lstlisting}[style=matlabcode]
+%% --- MATERIAL PROPERTIES --- %%
+E = 200000;  % MPa
+t = 1;  % mm
+nu = 0.30; 
+
+% node coordinates and element numbering
+nodes = [0 0; 1 0; 0 1];
+elements = [1 2 3];
+
+% construct CST matrices
+[A1, B1, D1, Ke1] = cst_matrices(nodes(elements,:), E, nu, t);
+
+% boundary conditions
+F1 = [0; 0; 0; 0; 0; -100];
+fixedDofs1 = [1 2 4];
+
+% solving and results
+U1 = solve_with_constraints(Ke1, F1, fixedDofs1);
+R1 = Ke1*U1 - F1;
+strain1 = B1*U1;
+stress1 = D1*strain1;
+
+fprintf('Area A (mm^2):\n');
+disp(A1);
+fprintf('B matrix (1/mm):\n');
+disp(B1);
+fprintf('D matrix (MPa):\n');
+disp(D1);
+fprintf('Element stiffness Ke (N/mm):\n');
+disp(Ke1);
+fprintf('Nodal displacement vector [u1 v1 u2 v2 u3 v3] (mm):\n');
+disp(U1);
+fprintf('Strain [epsilon_x epsilon_y gamma_xy]:\n');
+disp(strain1);
+fprintf('Stress [sigma_x sigma_y tau_xy] (MPa):\n');
+disp(stress1);
+
+
+%% FUNCTIONS
+
+function D = plane_stress_matrix(E, nu)
+    D = E/(1-nu^2) * [1 nu 0; nu 1 0; 0 0 (1-nu)/2];
+    end
+    
+    function [A, B, D, Ke] = cst_matrices(coords, E, nu, thickness)
+    
+    % separate x and y coordinates
+    x = coords(:,1);
+    y = coords(:,2);
+    
+    % calculate the area of the triangle
+    twoA = x(1)*(y(2)-y(3)) + x(2)*(y(3)-y(1)) + x(3)*(y(1)-y(2));
+    A = abs(twoA)/2;
+    
+    if A <= 0
+        error('CST element has zero area.');
+    end
+    
+    % calculate the B matrix
+    beta = [y(2)-y(3); y(3)-y(1); y(1)-y(2)];
+    gamma = [x(3)-x(2); x(1)-x(3); x(2)-x(1)];
+    B = [beta(1) 0 beta(2) 0 beta(3) 0; ...
+        0 gamma(1) 0 gamma(2) 0 gamma(3); ...
+        gamma(1) beta(1) gamma(2) beta(2) gamma(3) beta(3)]/(2*A);
+    
+    % calculate the D matrix and element stiffness matrix
+    D = plane_stress_matrix(E, nu);
+    Ke = thickness*A*(B.'*D*B);
+    end
+
+function U = solve_with_constraints(K, F, fixedDofs)
+    allDofs = (1:length(F)).';
+    freeDofs = setdiff(allDofs, fixedDofs);
+    U = zeros(size(F));
+    U(freeDofs) = K(freeDofs,freeDofs)\F(freeDofs);
+end
+\end{lstlisting}
+
+\subsection{Results}
+The result obtained from the code, formatted for $\LaTeX$, is given below:
+The cross-sectional area of the element is given by:
+
+\[
+A = 0.5000 \;\text{mm}^2
+\]
+
+The strain-displacement matrix (\(\mathbf{B}\)) is given by:
+
+\[
+\mathbf{B} =
+\begin{bmatrix}
+-1 & 0 & 1 & 0 & 0 & 0 \\
+0 & -1 & 0 & 0 & 0 & 1 \\
+-1 & -1 & 0 & 1 & 1 & 0
+\end{bmatrix}
+\;\text{mm}^{-1}
+\]
+
+The \(\mathbf{D}\) matrix  is given by:
+
+\[
+\mathbf{D} =
+10^5
+\begin{bmatrix}
+2.1978 & 0.6593 & 0 \\
+0.6593 & 2.1978 & 0 \\
+0 & 0 & 0.7692
+\end{bmatrix}
+\;\text{MPa}
+\]
+
+The element stiffness matrix (\(\mathbf{K}_e\)) is given by:
+
+\[
+\mathbf{K}_e =
+10^5
+\begin{bmatrix}
+1.4835 & 0.7143 & -1.0989 & -0.3846 & -0.3846 & -0.3297 \\
+0.7143 & 1.4835 & -0.3297 & -0.3846 & -0.3846 & -1.0989 \\
+-1.0989 & -0.3297 & 1.0989 & 0 & 0 & 0.3297 \\
+-0.3846 & -0.3846 & 0 & 0.3846 & 0.3846 & 0 \\
+-0.3846 & -0.3846 & 0 & 0.3846 & 0.3846 & 0 \\
+-0.3297 & -1.0989 & 0.3297 & 0 & 0 & 1.0989
+\end{bmatrix}
+\;\text{N/mm}
+\]
+
+The nodal displacement vector, arranged in the order \([u_1, v_1, u_2, v_2, u_3, v_3]^T\), is given by:
+
+\[
+\mathbf{d}_e =
+10^{-3}
+\begin{bmatrix}
+0 \\
+0 \\
+0.3000 \\
+0 \\
+0 \\
+-1.0000
+\end{bmatrix}
+\;\text{mm}
+\]
+
+The corresponding strain vector, consisting of the normal strains and engineering shear strain, is given by:
+
+\[
+\boldsymbol{\varepsilon} =
+10^{-3}
+\begin{bmatrix}
+0.3000 \\
+-1.0000 \\
+0
+\end{bmatrix}
+\]
+
+The resulting stress vector is given by:
+
+\[
+\boldsymbol{\sigma} =
+\begin{bmatrix}
+0 \\
+-200 \\
+0
+\end{bmatrix}
+\;\text{MPa}
+\]
+
+\subsection{Discussion}
+
+The deformation is illustrated in Figure~\ref{lab_4_1} below.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figures/lab_4_1.png}
+    \caption{Deformed CST element}
+    \label{lab_4_1}
+\end{figure}
+
+As you can see, the node 2 (top) moved downward by 0.001 mm, whereas the node . The vertical reaction at node 1 (bottom left) is +100 N, balancing the applied load. The node 3 (bottom right) moved 0.0003 mm to the right, relatively less compared to the node 1 displacement. Because a linear CST has constant $B$, strain and stress are uniform throughout the element. 
+
+The stress is compressive in the vertical direction, which is consistent with the downward force applied at node 3. The shear stress and strain are zero, $\sigma_{xy} = \gamma_{xy} = 0$. This is expected because the triangle is right-angled and the applied load is vertical, resulting in no shear deformation.
+
+\section{Patch Test}
+
+The objective is to perform a patch test on a unit square divided into two triangular CST
+elements. We will obtain a linear displacement field at the four nodes, calculate
+the strain in each element, and compare the numerical strain with the exact
+strain obtained by differentiating the prescribed displacement field. The
+test is used to verify that the CST formulation reproduces a compatible
+linear displacement field exactly. The system is given as:
+\begin{table}[h!]
+\centering
+\begin{tabular}{ccl}
+\toprule
+\textbf{Quantity} & \textbf{Property / Value}\\
+\midrule
+Node 1 & $(0,0)\ \si{\milli\metre}$ \\
+Node 2 & $(1,0)\ \si{\milli\metre}$ \\
+Node 3 & $(1,1)\ \si{\milli\metre}$ \\
+Node 4 & $(0,1)\ \si{\milli\metre}$ \\
+Element 1 & Nodes 1-2-3\\
+Element 2 & Nodes 1-3-4\\
+$u$ & $0.001x$\\
+$v$ & $0.002y$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Code}
+\begin{lstlisting}[style=matlabcode]
+% setting up a 1x1 square patch with two triangular elements
+nodes2 = [0 0; 1 0; 1 1; 0 1];
+elements2 = [1 2 3; 1 3 4];
+nNodes2 = size(nodes2, 1);
+nDofs2 = 2*nNodes2;
+
+% Assemble the global stiffness matrix for the patch test
+[K2, elementData2] = assemble_global_stiffness(nodes2, elements2, E, nu, t);
+
+% Prescribed displacement field: u = 0.001*x, v = 0.002*y.
+U2 = zeros(nDofs2, 1);
+U2(1:2:end) = 0.001*nodes2(:,1); % setting u displacements
+U2(2:2:end) = 0.002*nodes2(:,2); % setting v displacements
+exactStrain2 = [0.001; 0.002; 0];
+
+fprintf('Prescribed nodal displacement vector (mm):\n');
+disp(U2);
+fprintf('Element results [element area eps_x eps_y gamma_xy sigma_x sigma_y tau_xy]:\n');
+
+patchResults = zeros(size(elements2,1), 8);
+for e = 1:size(elements2,1)
+
+    % select the degrees of freedom for this element
+    dofs = element_dofs(elements2(e,:));
+
+    % Extract the displacements for this element
+    ue = U2(dofs);
+
+    % Compute the strain and stress for this element
+    strain = elementData2(e).B*ue;
+    stress = elementData2(e).D*strain;
+
+    % Store the results for this element
+    patchResults(e,:) = [e, elementData2(e).area, strain.', stress.'];
+    fprintf('%d  %.6f  %.6f  %.6f  %.6f  %.6f  %.6f  %.6f\n', ...
+        patchResults(e,:));
+end
+
+strainError2 = patchResults(:,3:5) - repmat(exactStrain2.', size(elements2,1), 1);
+fprintf('Maximum absolute strain error: %.3e\n', max(abs(strainError2(:))));
+
+
+%% more LOCAL FUNCTIONS (not repeating the ones from Q1)
+
+
+function dofs = element_dofs(conn)
+    % conn is a vector of node indices for the element
+    
+    % select the degrees of freedom for the element
+    dofs = reshape([2*conn-1; 2*conn], [], 1);
+end
+
+function [K, elementData] = assemble_global_stiffness(nodes, elements, E, nu, thickness)
+    
+    % setting up the number of degrees of freedom for the global stiffness matrix
+    nDofs = 2*size(nodes,1);
+    
+    % initialize the global stiffness matrix and element data structure
+    K = sparse(nDofs, nDofs);
+    elementData = repmat(struct('area', [], 'B', [], 'D', [], 'Ke', []), ...
+        size(elements,1), 1);
+    
+    for e = 1:size(elements,1)
+        % select the nodes for this element
+        conn = elements(e,:);
+    
+        % compute the element matrices using the CST formulation
+        [A, B, D, Ke] = cst_matrices(nodes(conn,:), E, nu, thickness);
+    
+        % assemble the global stiffness matrix and store element data
+        dofs = element_dofs(conn);
+        K(dofs,dofs) = K(dofs,dofs) + Ke;
+    
+        % set the element data for this element
+        elementData(e).area = A;
+        elementData(e).B = B;
+        elementData(e).D = D;
+        elementData(e).Ke = Ke;
+    end
+end
+\end{lstlisting}
+
+\subsection{Results}
+The prescribed nodal displacement vector, arranged in the order of the corresponding nodal degrees of freedom, is given by:
+
+\[
+\mathbf{d}_p =
+\begin{bmatrix}
+0 \\
+0 \\
+0.0010 \\
+0 \\
+0.0010 \\
+0.0020 \\
+0 \\
+0.0020
+\end{bmatrix}
+\;\text{mm}
+\]
+
+The element-wise results, including the area, strain components, and stress components, are summarized below:
+
+\[
+\begin{array}{c|c|ccc|ccc}
+\text{Element} & A\;(\text{mm}^2)
+& \varepsilon_x & \varepsilon_y & \gamma_{xy}
+& \sigma_x & \sigma_y & \tau_{xy} \\
+\hline
+1 & 0.5000 & 0.0010 & 0.0020 & 0.0000
+& 351.6484 & 505.4945 & 0.0000 \\
+2 & 0.5000 & 0.0010 & 0.0020 & 0.0000
+& 351.6484 & 505.4945 & 0.0000
+\end{array}
+\]
+
+The maximum absolute strain error obtained from the analysis is:
+
+\[
+\text{Maximum absolute strain error} = 0.000 \times 10^{0}
+\]
+
+\subsection{Discussion}
+The deformation is illustrated in Figure~\ref{lab_4_2} below.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figures/lab_4_2.png}
+    \caption{Deformed elements from patch test}
+    \label{lab_4_2}
+\end{figure}
+
+The prescribed nodal values are $(u,v)=[(0,0),(0.001,0),(0.001,0.002),(0,0.002)]$ mm. Both triangular elements recover $\epsilon_x=0.001$, $\epsilon_y=0.002$, and $\gamma_{xy}=0$ to machine precision.
+
+This is a successful patch test: a CST mesh reproduces a compatible linear displacement field exactly.
+
+\section{Cantilever Beam using CST Elements}
+
+The objective is to model a rectangular cantilever beam using triangular CST elements. We will generate a
+structured mesh, divide every rectangular mesh cell into two triangles,
+assemble the global stiffness matrix, apply the fixed-end boundary
+conditions, and calculate the vertical displacement at the loaded tip. We will also repeat the analysis for progressively finer meshes and compare the finite
+element tip displacement with the Euler--Bernoulli analytical solution. The system is given as:
+\begin{table}[h!]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Beam length, $L$ & $\SI{1}{\metre}=\SI{1000}{\milli\metre}$ \\
+Beam height, $H$ & $\SI{0.1}{\metre}=\SI{100}{\milli\metre}$ \\
+Thickness, $t$ & $\SI{1}{\milli\metre}$ \\
+Young's modulus, $E$ & $\SI{210000}{\mega\pascal}$ \\
+Poisson's ratio, $\nu$ & $0.30$ \\
+Applied tip load, $F_y$ & $-\SI{100}{\newton}$ \\
+Left-edge boundary condition & $u=v=0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Code}
+\begin{lstlisting}[style=matlabcode]
+% dimensions 
+L = 1000;  % mm
+H = 100;   % mm
+t = 1;  % mm
+
+% load 
+Fy = -100;  % N
+
+% Material properties
+E = 200000;  % MPa
+nu = 0.30; 
+I = t*H^3/12; % Moment of inertia for a rectangular cross-section
+
+
+% different mesh cases for convergence study
+meshCases = [10 2; 20 4; 40 8; 80 16];
+nCases = size(meshCases, 1); % no. of mesh cases
+
+% initialize results storage
+beamResults = zeros(nCases, 8);
+beamSolutions = cell(nCases, 1);
+
+% calculate the analytical tip displacement magnitude using Euler-Bernoulli beam theory
+analyticalTipMagnitude = abs(Fy)*L^3/(3*E*I);
+
+for iCase = 1:nCases
+    % generate the structured mesh
+    Nx = meshCases(iCase,1);
+    Ny = meshCases(iCase,2);
+    [nodes, elements, nodeId] = structured_mesh(Nx, Ny, L, H);
+
+    % assemble the global stiffness matrix
+    [K, ~] = assemble_global_stiffness(nodes, elements, E, nu, t);
+
+    % set no. of nodes and initialize the global force vector
+    nNodes = size(nodes,1);
+    F = zeros(2*nNodes, 1);
+
+
+    tipNode = nodeId(Nx, floor(Ny/2)); % find node ID of the tip node at the free end
+    tipVDof = 2*tipNode; % vertical degree of freedom for the tip node
+    F(tipVDof) = Fy; % apply the vertical load at the tip node
+
+    % fix the nodes at the clamped end
+    fixedNodes = zeros(Ny+1, 1);
+    for iy = 0:Ny
+        fixedNodes(iy+1) = nodeId(0, iy);
+    end
+    fixedDofs = reshape([2*fixedNodes-1, 2*fixedNodes].', [], 1);
+
+    % solve for the displacements with the applied constraints
+    U = solve_with_constraints(K, F, fixedDofs);
+
+    % isolate the tip displacement and compute the relative error
+    tipDisplacement = U(tipVDof);
+    relativeError = abs(abs(tipDisplacement) - analyticalTipMagnitude) ...
+        / analyticalTipMagnitude * 100;
+
+    % store the results for this mesh case
+    beamResults(iCase,:) = [Nx, Ny, nNodes, size(elements,1), ...
+        tipDisplacement, abs(tipDisplacement), ...
+        analyticalTipMagnitude, relativeError];
+    beamSolutions{iCase} = struct('nodes', nodes, 'elements', elements, ...
+        'U', U, 'tipNode', tipNode);
+end
+
+fprintf(['Nx  Ny  Nodes  Elements  FEM tip v (mm)  FEM magnitude (mm)  ', ...
+    'Analytical (mm)  Error (%%)\n']);
+fprintf('%2d  %2d  %5d  %8d  %16.6f  %19.6f  %16.6f  %8.3f\n', ...
+    beamResults.');
+
+fprintf('\nSecond moment of area I = %.6f mm^4\n', I);
+fprintf('Analytical tip displacement magnitude = %.6f mm\n', ...
+    analyticalTipMagnitude);
+
+%% more local functions (excluding ones from Q1 and Q2 to avoid repetition)
+
+
+function [nodes, elements, nodeId] = structured_mesh(Nx, Ny, L, H)
+
+    % generate a structured mesh of triangular elements over a rectangular domain
+    x = linspace(0, L, Nx+1);
+    y = linspace(0, H, Ny+1);
+    [X, Y] = meshgrid(x, y);
+    
+    % create the node coordinates and a function to map (ix, iy) to node ID
+    nodes = [X(:), Y(:)];
+    nodeId = @(ix, iy) iy + 1 + ix*(Ny+1);
+    
+    % create the triangular elements by splitting each rectangle into two triangles
+    elements = zeros(2*Nx*Ny, 3);
+    e = 0;
+    for ix = 0:Nx-1
+        for iy = 0:Ny-1
+            n1 = nodeId(ix, iy);
+            n2 = nodeId(ix+1, iy);
+            n3 = nodeId(ix+1, iy+1);
+            n4 = nodeId(ix, iy+1);
+            e = e + 1;
+            elements(e,:) = [n1 n2 n3];
+            e = e + 1;
+            elements(e,:) = [n1 n3 n4];
+        end
+    end
+end
+\end{lstlisting}
+\subsection{Results}
+The second moment of area of the beam cross-section is calculated as:
+
+\[
+I =\frac{tH^3}{12}= 83333.33 \;\text{mm}^4
+\]
+
+The analytical tip displacement magnitude is given by:
+
+\[
+|\delta_{\text{analytical}}| = \frac{|F|L^3}{3EI}= 2.00 \;\text{mm}
+\]
+The convergence study was conducted using progressively refined meshes with different numbers of elements along the \(x\)- and \(y\)-directions. The resulting finite element tip displacements and percentage errors are summarized in the following table:
+\[
+\begin{array}{c|c|c|c|c|c|c}
+N_x & N_y & \text{Nodes} & \text{Elements}
+& \text{FEM tip }v
+& \text{Error} \\
+& & & & (\text{mm}) & (\%) \\
+\hline
+10 & 2 & 33 & 40 & -0.742215   & 62.889 \\
+20 & 4 & 105 & 160 & -1.403156   & 29.842 \\
+40 & 8 & 369 & 640 & -1.813238   & 9.338 \\
+80 & 16 & 1377 & 2560 & -1.957955  & 2.102
+\end{array}
+\]
+where the relative error was found by
+$$\frac{|\delta| - |\delta_{\text{analytical}}|}{|\delta_{\text{analytical}}|}100\%$$
+
+\subsection{Discussion}
+The deformation of the cantilever beam, for 10 segments in $x$ direction and 2 segments in $y$ direction, is illustrated in Figure~\ref{lab_4_3_1} below.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.65\linewidth]{figures/lab_4_3_1.png}
+    \caption{Deformed Cantilever beam}
+    \label{lab_4_3_1}
+\end{figure}
+
+The Euler-Bernoulli reference value is
+$$I=83333.33\;\text{mm}^4,\qquad |\delta_{analytical}|=2.00\;\text{mm}.$$
+
+Refinement from 40 to 2560 CST elements increases the predicted downward displacement toward the analytical value. The results gave us −0.74 mm (62.9\% error) for the coarsest mesh and −1.96 mm (2.1\% error)** for the finest mesh. The convergence to the analytical value is depicted in the Figure~\ref{lab_4_3_2} below.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.69\linewidth]{figures/lab_4_3_2.png}
+    \caption{Convergence of Cantilever beam solution}
+    \label{lab_4_3_2}
+\end{figure}
+
+Increasing the number of elements improves the accuracy, but convergence is slow. The relative error decreases from 62.9\% to 2.1\% as the mesh is refined when the number of elements is over 64 times the original.
+
+CST elements are too stiff on coarse meshes for bending because each triangle has constant strain and cannot represent the beam’s varying bending strain field. Consequently, bending-dominated problems require refinement and have slower convergence than higher-order elements. The solution is to use higher-order elements or refine the mesh, especially in regions of high bending.
+
+

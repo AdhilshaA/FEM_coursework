@@ -1,0 +1,188 @@
+/CLEAR
+/PREP7
+
+! ==========================================================
+! PART 2(a): FULL INTEGRATION (SOLID185, KEYOPT(2) = 0)
+! Steel strip: L = 200 mm, b = 20 mm, t = 5 mm
+! ==========================================================
+ET,1,SOLID185
+KEYOPT,1,2,0          ! 0 = Full integration (Full B matrix)
+
+MP,EX,1,200E3
+MP,PRXY,1,0.3
+
+! Geometry
+BLOCK,0,200,0,20,0,5
+
+! Mesh Divisions (20 x 2 x 1 elements)
+VCLEAR,ALL
+LSEL,S,LENGTH,,200
+LESIZE,ALL,,,20,,1,,,0
+LSEL,S,LENGTH,,20
+LESIZE,ALL,,,2,,1,,,0
+LSEL,S,LENGTH,,5
+LESIZE,ALL,,,1,,1,,,0
+ALLSEL
+
+MSHKEY,1
+VMESH,ALL
+
+! Clamped Edge at x = 0
+ASEL,S,LOC,X,0
+DA,ALL,ALL,0
+ALLSEL
+
+! Tip Load: P = 10 N in -z direction shared across x = 200 face
+NSEL,S,LOC,X,200
+*GET,NE,NODE,0,COUNT
+F,ALL,FZ,-10/NE
+ALLSEL
+
+! Solution & Postprocessing
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+/POST1
+NT = NODE(200,10,0)
+*GET,WT_Full,NODE,NT,U,Z
+*STATUS,WT_Full
+FINISH
+
+
+! ==========================================================
+! PART 2(b): REDUCED INTEGRATION & HOURGLASSING
+! ==========================================================
+/PREP7
+ET,1,SOLID185
+KEYOPT,1,2,1          ! 1 = Reduced integration with hourglass control
+VCLEAR,ALL
+VMESH,ALL
+FINISH
+
+/SOLU
+SOLVE
+FINISH
+
+! Test hourglassing by applying load P at a single corner node at tip
+/PREP7
+FDELE,ALL,ALL
+! Find single node at tip corner (e.g., at x=200, y=10, z=5)
+F,NODE(200,10,5),FZ,-10
+/SOLU
+SOLVE
+FINISH
+
+/POST1
+/DSCALE,1,200         ! Scale deformation to visualize hourglass pattern
+PLDISP,1              ! Plot deformed shape
+FINISH
+
+
+! ==========================================================
+! PART 2(c)(i): ENHANCED STRAIN (SOLID185, KEYOPT(2) = 2)
+! ==========================================================
+/PREP7
+FDELE,ALL,ALL
+! Reapply distributed load across tip face
+NSEL,S,LOC,X,200
+*GET,NE,NODE,0,COUNT
+F,ALL,FZ,-10/NE
+ALLSEL
+
+ET,1,SOLID185
+KEYOPT,1,2,2          ! 2 = Enhanced strain formulation (incompatible modes)
+VCLEAR,ALL
+VMESH,ALL
+FINISH
+
+/SOLU
+SOLVE
+FINISH
+
+/POST1
+NT = NODE(200,10,0)
+*GET,WT_Enhanced,NODE,NT,U,Z
+*STATUS,WT_Enhanced
+FINISH
+
+
+! ==========================================================
+! PART 2(c)(ii): 20-NODE BRICK ELEMENTS (SOLID186)
+! ==========================================================
+/PREP7
+ET,1,SOLID186         ! 20-node higher-order brick element
+VCLEAR,ALL
+VMESH,ALL
+FINISH
+
+/SOLU
+SOLVE
+FINISH
+
+/POST1
+NT = NODE(200,10,0)
+*GET,WT_Solid186,NODE,NT,U,Z
+*STATUS,WT_Solid186
+FINISH
+
+
+! ==========================================================
+! PART 2(c)(iii): SHELL ELEMENTS ON MID-SURFACE (SHELL181)
+! ==========================================================
+/CLEAR
+/PREP7
+ET,1,SHELL181
+MP,EX,1,200E3
+MP,PRXY,1,0.3
+
+RECTNG,0,200,0,20     ! Mid-surface plate (200 x 20 mm)
+SECTYPE,1,SHELL
+SECDATA,5             ! Thickness t = 5 mm
+
+ESIZE,10              ! Mesh sizing
+MSHKEY,1
+AMESH,ALL
+
+LSEL,S,LOC,X,0
+DL,ALL,,ALL,0         ! Clamp edge at x = 0
+ALLSEL
+
+! Apply tip load along x = 200 edge
+LSEL,S,LOC,X,200
+SFL,ALL,PRES,-0.05    ! Or equivalent nodal forces summing to 10 N
+ALLSEL
+
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+/POST1
+NT = NODE(200,10,0)
+*GET,WT_Shell181,NODE,NT,U,Z
+*STATUS,WT_Shell181
+FINISH
+```[cite: 13, 14]
+
+---
+
+### Analytical Comparison Reference ($\delta_{\text{beam}}$)
+
+To fill out your lab report table for Part 2(d), compare your FEA tip deflections ($w_{\text{FE}}$) against the classical Euler-Bernoulli beam formula[cite: 13]:
+
+$$\delta_{\text{beam}} = \frac{P L^3}{3 E I}$$
+
+Where:
+* $P = 10\text{ N}$
+* $L = 200\text{ mm}$
+* $E = 200,000\text{ MPa}$
+* $I = \frac{b t^3}{12} = \frac{20 \times 5^3}{12} \approx 208.33\text{ mm}^4$
+
+$$\delta_{\text{beam}} = \frac{10 \times (200)^3}{3 \times 200,000 \times 208.33} \approx 0.384\text{ mm}$$
+
+<ElicitationsGroup message="If you need help analyzing or formatting the results table:">
+  <Elicitation label="Shear locking explanation" query="How do I explain why the fully integrated 8-node brick suffers from shear locking in my report?"/>
+  <Elicitation label="Hourglassing explanation" query="Why does reduced integration lead to zero-energy modes and how does hourglass control fix it?"/>
+</ElicitationsGroup>

@@ -1,0 +1,90 @@
+/CLEAR
+/PREP7
+
+! 1. Element Type & Keyoptions (Axisymmetric mode)
+ET,1,PLANE183
+KEYOPT,1,3,1
+
+! 2. Material Properties
+MP,EX,1,200E3
+MP,PRXY,1,0.3
+
+! 3. Geometry (Rectangular cross-section representing the r-z slice)
+RECTNG,100,200,0,20
+
+! 4. Mesh
+ESIZE,0.5
+MSHKEY,1
+AMESH,ALL
+
+! 5. Supports (UY = 0 on top and bottom edges)
+LSEL,S,LOC,Y,0
+LSEL,A,LOC,Y,20
+DL,ALL,,UY,0
+ALLSEL
+
+! --- Solution Setup ---
+/SOLU
+ANTYPE,STATIC
+OUTRES,ALL,ALL
+KBC,0               ! Ramped loading across substeps
+
+! 6. Load Step 1: Internal pressure pi = 10 MPa (Time = 1)
+LSEL,S,LOC,X,100
+SFL,ALL,PRES,10
+ALLSEL
+TIME,1
+NSUBST,5
+SOLVE
+
+! 7. Load Step 2: External pressure po = 5 MPa added, pi held at 10 (Time = 2)
+LSEL,S,LOC,X,200
+SFL,ALL,PRES,5
+ALLSEL
+TIME,2
+NSUBST,5
+SOLVE
+
+! 8. Load Step 3: Both pressures ramped to 0 (Time = 3)
+LSEL,S,LOC,X,100
+LSEL,A,LOC,X,200
+SFL,ALL,PRES,0
+ALLSEL
+TIME,3
+NSUBST,5
+SOLVE
+FINISH
+
+! --- Postprocessing (POST1) ---
+/POST1
+SET,1,LAST
+PLNSOL,S,X          ! Radial stress contours
+PLNSOL,S,Z          ! Hoop stress contours
+
+! Path operations for hoop stress along radius
+PATH,RAD,2,30,40
+PPATH,1,,100,10
+PPATH,2,,200,10
+PDEF,SHOOP,S,Z
+PLPATH,SHOOP
+
+! --- Time History Postprocessing (POST26) ---
+/POST26
+NB = NODE(100,0,0)
+EB = ENEARN(NB)
+NSOL,2,NB,U,X,UBORE
+ESOL,3,EB,NB,S,X,SRAD
+ESOL,4,EB,NB,S,Z,SHOOP
+PLVAR,2
+PLVAR,3,4
+PRVAR,2,3,4
+
+! Stress against pressure (Load Step 1)
+/POST26
+ADD,5,1,,PI,,,10
+TIMERANGE,0,1
+XVAR,5
+/AXLAB, x, Internal Pressure (MPa)
+PLVAR,4
+XVAR,1
+TIMERANGE

@@ -1,0 +1,88 @@
+/CLEAR
+/PREP7
+
+! 1. Element Type & Material Properties
+ET,1,SOLID186
+MP,EX,1,200E3
+MP,PRXY,1,0.3
+
+! 2. Geometry (90-degree sector of the cylinder slice: inner r=100, outer r=200, height=20, angles=0 to 90)
+CYLIND,100,200,0,20,0,90
+
+! 3. Mesh (Brick elements using sweep)
+ESIZE,10
+VSWEEP,ALL
+*GET,NN,NODE,0,COUNT
+
+! 4. Symmetry Boundary Conditions on cut faces (UX=0 on X=0 plane, UY=0 on Y=0 plane)
+ASEL,S,LOC,Y,0
+ASEL,A,LOC,X,0
+DA,ALL,SYMM
+ALLSEL
+
+! 5. Plane Strain Conditions (UZ = 0 on top and bottom faces at Z=0 and Z=20)
+ASEL,S,LOC,Z,0
+ASEL,A,LOC,Z,20
+DA,ALL,UZ,0
+ALLSEL
+
+! --- Solution Setup ---
+/SOLU
+ANTYPE,STATIC
+OUTRES,ALL,ALL
+KBC,0               ! Ramped loading across substeps
+TREF,0
+CSYS,1              ! Switch to cylindrical coordinate system for pressure application
+
+! 6. Load Step 1: Internal pressure pi = 10 MPa at r = 100 (Time = 1)
+ASEL,S,LOC,X,100
+SFA,ALL,1,PRES,10
+ALLSEL
+TIME,1
+NSUBST,5
+SOLVE
+
+! Load Step 2: External pressure po = 5 MPa added at r = 200, pi held at 10 (Time = 2)
+ASEL,S,LOC,X,200
+SFA,ALL,1,PRES,5
+ALLSEL
+TIME,2
+NSUBST,5
+SOLVE
+
+! Load Step 3: Both pressures ramped to 0 (Time = 3)
+ASEL,S,LOC,X,100
+ASEL,A,LOC,X,200
+SFA,ALL,1,PRES,0
+ALLSEL
+TIME,3
+NSUBST,5
+SOLVE
+FINISH
+
+! --- Postprocessing (POST1) ---
+/POST1
+SET,1,LAST
+RSYS,1              ! Switch results coordinate system to cylindrical
+PLNSOL,S,Y          ! Hoop stress (sigma_theta) contours
+
+! --- Time History Postprocessing (POST26) ---
+/POST26
+CSYS,0              ! Switch back to global cartesian for node selection
+NB = NODE(100,0,0)  ! Select bore node on the x-axis
+EB = ENEARN(NB)     !<span></span>
+NSOL,2,NB,U,X,UBORE ! Radial displacement at bore
+ESOL,3,EB,NB,S,X,SRAD   ! Radial stress (SX in global = radial in this orientation)
+ESOL,4,EB,NB,S,Y,SHOOP  ! Hoop stress (SY in global = hoop)
+PLVAR,3,4           ! Plot radial and hoop stresses against time
+PRVAR,2,3,4
+
+! --- Optional: Tetrahedral Mesh (SOLID187) ---
+/PREP7
+VCLEAR,ALL
+ET,2,SOLID187
+TYPE,2
+MSHAPE,1,3D
+MSHKEY,0
+VMESH,ALL
+FINISH

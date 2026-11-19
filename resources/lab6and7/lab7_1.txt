@@ -1,0 +1,108 @@
+/CLEAR
+/PREP7
+
+! ==========================================
+! 1. ELEMENT TYPE & MATERIAL PROPERTIES
+! ==========================================
+ET,1,SHELL181
+MP,EX,1,200E3
+MP,PRXY,1,0.3
+
+! ==========================================
+! 2. GEOMETRY & PRESSURE LOAD SETUP
+! ==========================================
+BLC4,0,0,1000,1000       ! Square plate: 1000 x 1000 mm
+
+! Apply uniform transverse pressure q = 0.01 MPa
+SFA,ALL,1,PRES,0.01
+
+! Clamped boundary conditions on all four edges (All DOFs = 0)
+LSEL,ALL
+DL,ALL,,ALL,0
+ALLSEL
+
+! ==========================================
+! PART A: MESH CONVERGENCE STUDY (t = 10 mm)
+! ==========================================
+SECTYPE,1,SHELL
+SECDATA,10               ! Thickness t = 10 mm
+
+*DIM, MESH_SIZES, ARRAY, 3
+MESH_SIZES(1) = 250      ! 4x4 mesh
+MESH_SIZES(2) = 125      ! 8x8 mesh
+MESH_SIZES(3) = 50       ! 20x20 mesh
+
+*DIM, W_RESULTS, ARRAY, 3
+
+*DO, i, 1, 3
+    ESIZE, MESH_SIZES(i)
+    MSHKEY,1
+    AMESH,ALL
+    
+    /SOLU
+    ANTYPE,STATIC
+    SOLVE
+    FINISH
+    
+    ! Extract center deflection at (500, 500, 0)
+    /POST1
+    NC = NODE(500,500,0)
+    *GET, W_RESULTS(i), NODE, NC, U, Z
+    
+    ! Clear mesh for next iteration (except on last run of part A)
+    *IF, i, LT, 3, THEN
+        /PREP7
+        ACLEAR,ALL
+    *ENDIF
+*ENDDO
+
+! ==========================================
+! PART B: TOP & BOTTOM STRESSES (20x20 Mesh, t = 10 mm)
+! =================================ating
+/POST1
+SET,1,LAST
+
+! Read Top Surface Stresses
+SHELL,TOP
+PLNSOL,S,X               ! Plot sigma_x on top surface
+
+! Read Bottom Surface Stresses
+SHELL,BOT
+PLNSOL,S,X               ! Plot sigma_x on bottom surface
+
+! ==========================================
+! PART C: THICKNESS VARIATION STUDY (a/t ratios)
+! ==========================================
+! Using the 20x20 mesh (ESIZE = 50)
+FINISH
+/PREP7
+ESIZE,50
+MSHKEY,1
+ACLEAR,ALL
+AMESH,ALL
+
+*DIM, THICKNESSES, ARRAY, 4
+THICKNESSES(1) = 10      ! a/t = 100
+THICKNESSES(2) = 50      ! a/t = 20
+THICKNESSES(3) = 100     ! a/t = 10
+THICKNESSES(4) = 200     ! a/t = 5
+
+*DIM, W_THICK, ARRAY, 4
+
+*DO, j, 1, 4
+    /PREP7
+    SECDATA, THICKNESSES(j)  ! Update shell thickness
+    
+    /SOLU
+    ANTYPE,STATIC
+    SOLVE
+    FINISH
+    
+    /POST1
+    NC = NODE(500,500,0)
+    *GET, W_THICK(j), NODE, NC, U, Z
+*ENDDO
+
+*STATUS, W_RESULTS
+*STATUS, W_THICK
+FINISH
