@@ -1,4 +1,7 @@
 resources/lab7_group
+lab5/*
+lab5.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
