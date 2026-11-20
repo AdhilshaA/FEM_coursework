@@ -121,7 +121,7 @@ function [nodes, triangles, edgeInfo] = make_mesh(p, nx, ny)
 end
 
 function draw_geometry(p, outdir)
-    figure('Visible','on','Position',[100 100 1100 800]);
+    h = figure('Visible','on','Position',[100 100 1100 800]);
     clf;
     airHandle = rectangle('Position',[-p.a/2,p.yb,p.a,p.yt-p.yb], ...
         'FaceColor',[0.95 0.98 1],'EdgeColor','k','LineWidth',1.5);
@@ -168,12 +168,11 @@ function draw_geometry(p, outdir)
         'Absorbing boundaries (top/bottom)','Incident wave'}, ...
         'Location','southoutside','Orientation','horizontal','Box','off','NumColumns',3);
     set(gca,'Position',[0.18 0.20 0.64 0.68]);
-    exportgraphics(gcf,fullfile(outdir,'geometry.png'), ...
-        'Resolution',300,'ContentType','image');
+    print(h,fullfile(outdir,'geometry.png'),'-dpng','-r300');
 end
 
 function draw_mesh(nodes, triangles, p, filename)
-    figure('Visible','on','Position',[100 100 1100 800]);
+    h = figure('Visible','on','Position',[100 100 1100 800]);
     clf;
     patch('Faces',triangles,'Vertices',[nodes(:,1)*1e9 nodes(:,2)*1e9], ...
         'FaceColor',[0.95 0.98 1],'EdgeColor',[0.2 0.2 0.2],'LineWidth',0.15);
@@ -199,7 +198,7 @@ function draw_mesh(nodes, triangles, p, filename)
     title('Upper-right cylinder quarter','FontSize',9);
     set(gca,'FontSize',8);
 
-    exportgraphics(gcf,filename,'Resolution',300,'ContentType','image');
+    print(h,filename,'-dpng','-r300');
 end
 
 function print_mesh_statistics(nodes, triangles)
@@ -380,7 +379,7 @@ function [Hx, Hy] = magnetic_field(nodes, triangles, U, omega, mu, gradU)
 end
 
 function draw_spectrum(wavelength_nm, R, T, A, filename)
-    figure('Visible','on','Position',[100 100 900 600]);
+    h = figure('Visible','on','Position',[100 100 900 600]);
     plot(wavelength_nm,R,'b-o','LineWidth',1.5,'MarkerSize',3); hold on;
     plot(wavelength_nm,T,'r-s','LineWidth',1.5,'MarkerSize',3);
     plot(wavelength_nm,A,'k-d','LineWidth',1.5,'MarkerSize',3);
@@ -389,7 +388,7 @@ function draw_spectrum(wavelength_nm, R, T, A, filename)
     ylabel('Normalized power');
     legend('Reflection R','Transmission T','Absorption A','Location','best');
     title('Periodic-cylinder spectral response');
-    exportgraphics(gcf,filename,'Resolution',300);
+    print(h,filename,'-dpng','-r300');
 end
 
 function draw_fields(nodes, triangles, Ez, Hx, Hy, p, outdir)
@@ -399,25 +398,25 @@ function draw_fields(nodes, triangles, Ez, Hx, Hy, p, outdir)
     Hx = full(Hx(:));
     Hy = full(Hy(:));
 
-    figure('Visible','on','Position',[100 100 900 650]);
+    hElectric = figure('Visible','on','Position',[100 100 900 650]);
     patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData',full(abs(Ez)), ...
         'FaceColor','interp','EdgeColor','none');
     hold on;
     overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('|E_z| at 550 nm');
-    exportgraphics(gcf,fullfile(outdir,'electric_field_magnitude.png'),'Resolution',300);
+    print(hElectric,fullfile(outdir,'electric_field_magnitude.png'),'-dpng','-r300');
 
-    figure('Visible','on','Position',[100 100 900 650]);
+    hReal = figure('Visible','on','Position',[100 100 900 650]);
     patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData',full(real(Ez)), ...
         'FaceColor','interp','EdgeColor','none');
     hold on;
     overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('Re(E_z) at 550 nm');
-    exportgraphics(gcf,fullfile(outdir,'electric_field_real.png'),'Resolution',300);
+    print(hReal,fullfile(outdir,'electric_field_real.png'),'-dpng','-r300');
 
-    figure('Visible','on','Position',[100 100 900 650]);
+    hMagnetic = figure('Visible','on','Position',[100 100 900 650]);
     patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData', ...
         full(sqrt(abs(Hx).^2+abs(Hy).^2)), ...
         'FaceColor','interp','EdgeColor','none');
@@ -427,9 +426,9 @@ function draw_fields(nodes, triangles, Ez, Hx, Hy, p, outdir)
     overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('|H| and in-plane magnetic-field vectors at 550 nm');
-    exportgraphics(gcf,fullfile(outdir,'magnetic_field.png'),'Resolution',300);
+    print(hMagnetic,fullfile(outdir,'magnetic_field.png'),'-dpng','-r300');
 
-    figure('Visible','on','Position',[100 100 1400 650]);
+    hCombined = figure('Visible','on','Position',[100 100 1400 650]);
     tiledlayout(1,2,'Padding','compact','TileSpacing','compact');
 
     nexttile;
@@ -445,8 +444,7 @@ function draw_fields(nodes, triangles, Ez, Hx, Hy, p, outdir)
     title('Magnetic-field magnitude |H|');
     xlabel('x (nm)');
 
-    exportgraphics(gcf,fullfile(outdir,'electric_magnetic_three_cells.png'), ...
-        'Resolution',300,'ContentType','image');
+    print(hCombined,fullfile(outdir,'electric_magnetic_three_cells.png'),'-dpng','-r300');
 end
 
 function overlay_cylinder_and_boundaries(p)
@@ -539,10 +537,10 @@ function run_mesh_convergence(p, lambda0, outdir, nx, ny)
         'VariableNames',{'Nodes','Triangles','Transmission'}), ...
         fullfile(outdir,'mesh_convergence.csv'));
 
-    figure('Visible','on','Position',[100 100 900 600]);
+    h = figure('Visible','on','Position',[100 100 900 600]);
     plot(ndof,Tval,'b-o','LineWidth',1.5,'MarkerSize',7); grid on;
     xlabel('Number of nodes');
     ylabel('Transmission at 550 nm');
     title('Mesh-convergence study');
-    exportgraphics(gcf,fullfile(outdir,'mesh_convergence.png'),'Resolution',300);
+    print(h,fullfile(outdir,'mesh_convergence.png'),'-dpng','-r300');
 end
