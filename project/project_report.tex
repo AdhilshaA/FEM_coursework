@@ -176,25 +176,40 @@ the positive $y$-direction.
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[>=stealth, scale=0.95]
-        \draw[thick,fill=blue!5] (-3,-2) rectangle (3,2);
+            \draw[thick,fill=blue!5] (-1.5,-1.5) rectangle (1.5,1.5);
         \draw[thick,fill=cyan!25] (0,0) circle (0.75);
-        \draw[dashed] (-3,-2)--(-3,2) node[midway,left]{periodic};
-        \draw[dashed] (3,-2)--(3,2) node[midway,right]{periodic};
-        \draw[->,very thick,blue] (-1.4,-2.8)--(-1.4,-1.9);
-        \draw[->,very thick,red] (-0.7,-1.9)--(-0.7,-2.8);
-        \draw[->,very thick,green!60!black] (1.2,1.9)--(1.2,2.8);
-        \node at (-1.4,-3.05){$E^{\mathrm{inc}}$};
-        \node at (-0.7,-3.05){$E^{\mathrm{ref}}$};
-        \node at (1.2,3.05){$E^{\mathrm{trans}}$};
-        \node[below] at (-3,-2){$\Gamma_b$};
-        \node[above] at (3,2){$\Gamma_t$};
+            \draw[dashed,thick,black] (-1.5,-1.5)--(-1.5,1.5);
+            \draw[dashed,thick,black] (1.5,-1.5)--(1.5,1.5);
+            \draw[dash dot,thick,red] (-1.5,-1.5)--(1.5,-1.5);
+            \draw[dash dot,thick,red] (-1.5,1.5)--(1.5,1.5);
+            \draw[->,very thick,blue] (0,-2.15)--(0,-1.55);
+            \node[blue,below] at (0,-2.15){Incident wave $E^{\mathrm{inc}}$};
+            \node[left] at (-1.5,0){Periodic};
+            \node[right] at (1.5,0){Periodic};
+            \node[below,red] at (0.7,-1.5){$\Gamma_b$};
+            \node[above,red] at (0.7,1.5){$\Gamma_t$};
         \node at (0,0){$\epsilon_{r,c}$};
-        \draw[<->] (-3,-2.35)--(3,-2.35) node[midway,below]{$a=300$ nm};
+        \draw[<->] (-1.5,-1.75)--(1.5,-1.75) node[midway,below]{$a=300$ nm};
         \draw[<->] (-0.75,0)--(0.75,0) node[midway,below]{$2r=150$ nm};
-        \node at (2.2,1.2){$\epsilon_{r,b}=1$};
+        \node at (1.05,1.05){$\epsilon_{r,b}=1$};
+
+        \begin{scope}[shift={(0,-2.75)}]
+            \fill[blue!5] (-1.65,-0.12) rectangle (-1.45,0.08);
+            \node[right,font=\footnotesize] at (-1.42,0){Air domain};
+            \fill[cyan!25] (-0.45,-0.12) rectangle (-0.25,0.08);
+            \node[right,font=\footnotesize] at (-0.22,0){Dielectric cylinder};
+            \draw[dashed,thick] (0.65,-0.12)--(0.95,0.08);
+            \node[right,font=\footnotesize] at (0.98,0){Periodic boundaries};
+            \draw[dash dot,thick,red] (0.65,-0.42)--(0.95,-0.22);
+            \node[right,font=\footnotesize] at (0.98,-0.32){Absorbing boundaries};
+        \end{scope}
     \end{tikzpicture}
     \caption{Schematic of the two-dimensional periodic dielectric-cylinder
-    unit cell and its electromagnetic boundary conditions.}
+    unit cell. The vertical dashed boundaries are periodic in the
+    $x$-direction, the horizontal dash-dot boundaries are absorbing
+    boundaries in the $y$-direction, and the blue arrow denotes the
+    incident plane wave. Pale blue denotes air and medium blue denotes
+    the dielectric cylinder.}
     \label{fig:geometry}
 \end{figure}
 
@@ -245,6 +260,8 @@ the simulation and may be adjusted during the parametric study.
         \midrule
         Lattice period & $a$ & \SI{300}{\nano\meter}\\
         Cylinder radius & $r$ & \SI{75}{\nano\meter}\\
+        Lower boundary & $y_b$ & \SI{-300}{\nano\meter}\\
+        Upper boundary & $y_t$ & \SI{300}{\nano\meter}\\
         Cylinder refractive index & $n_c$ & 2.5\\
         Cylinder relative permittivity & $\epsilon_{r,c}=n_c^2$ & 6.25\\
         Background refractive index & $n_b$ & 1\\
@@ -846,6 +863,13 @@ triangles. The mesh statistics and convergence data are written to
     \centering
     \includegraphics[width=0.72\textwidth]{figures/magnetic_field.png}
     \caption{In-plane magnetic-field magnitude and vectors at $\lambda_0=550$ nm.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/electric_magnetic_three_cells.png}
+    \caption{Electric and magnetic fields in three periodic unit cells.
+    Dashed vertical lines indicate cell boundaries and dashed circles
+    indicate the dielectric-cylinder geometry.}
 \end{figure}
 
 \section{Reflection and transmission spectra}

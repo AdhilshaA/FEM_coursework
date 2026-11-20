@@ -12,8 +12,8 @@ function fem_periodic_cylinder()
     p.eps_c = 2.5^2;
     p.eps_b = 1;
     p.mu_r = 1;
-    p.yb = -750e-9;
-    p.yt = 750e-9;
+    p.yb = -300e-9;
+    p.yt = 300e-9;
     p.xc = 0;
     p.yc = 0;
     p.loss_c = 0;
@@ -26,8 +26,8 @@ function fem_periodic_cylinder()
 
     draw_geometry(p, outdir);
 
-    nx = 61;
-    ny = 51;
+    nx = 101;
+    ny = 101;
     [nodes, triangles, edgeInfo] = make_mesh(p, nx, ny);
 
     draw_mesh(nodes, triangles, p, fullfile(outdir, 'geometry_mesh.png'));
@@ -77,7 +77,7 @@ function fem_periodic_cylinder()
 
     draw_fields(nodes, triangles, Ez_sample, Hx_sample, Hy_sample, p, outdir);
 
-    run_mesh_convergence(p, sampleLambda, outdir);
+    run_mesh_convergence(p, sampleLambda, outdir, nx, ny);
 
     energyError = max(abs(R + T + A - 1));
     fprintf('Maximum post-processed R+T+A error: %.3e\n', energyError);
@@ -121,34 +121,60 @@ function [nodes, triangles, edgeInfo] = make_mesh(p, nx, ny)
 end
 
 function draw_geometry(p, outdir)
-    figure('Visible','off','Position',[100 100 900 600]);
-    rectangle('Position',[-p.a/2,p.yb,p.a,p.yt-p.yb], ...
+    figure('Visible','on','Position',[100 100 1100 800]);
+    clf;
+    airHandle = rectangle('Position',[-p.a/2,p.yb,p.a,p.yt-p.yb], ...
         'FaceColor',[0.95 0.98 1],'EdgeColor','k','LineWidth',1.5);
-    rectangle('Position',[-p.r,p.r-p.r-p.r,2*p.r,2*p.r], ...
+    cylinderHandle = rectangle('Position',[-p.r,-p.r,2*p.r,2*p.r], ...
         'Curvature',[1 1],'FaceColor',[0.7 0.85 1],'EdgeColor','b','LineWidth',1.5);
     hold on;
-    plot([p.xc p.xc],[p.yb p.yt],'k:');
-    quiver(-p.a/3,p.yb-0.18*(p.yt-p.yb),0,0.12*(p.yt-p.yb),0,'b','LineWidth',2,'MaxHeadSize',0.8);
-    quiver(-p.a/3,p.yt+0.03*(p.yt-p.yb),0,-0.06*(p.yt-p.yb),0,'r','LineWidth',1.5,'MaxHeadSize',0.8);
-    quiver(p.a/3,p.yb-0.03*(p.yt-p.yb),0,0.06*(p.yt-p.yb),0,'g','LineWidth',1.5,'MaxHeadSize',0.8);
-    xline(-p.a/2,'--k','Left periodic boundary');
-    xline(p.a/2,'--k','Right periodic boundary');
+
+    line([-p.a/2 -p.a/2],[p.yb p.yt],'LineStyle','--','Color','k','LineWidth',1.5);
+    line([ p.a/2  p.a/2],[p.yb p.yt],'LineStyle','--','Color','k','LineWidth',1.5);
+    line([-p.a/2 p.a/2],[p.yb p.yb],'LineStyle','-.','Color','r','LineWidth',1.5);
+    line([-p.a/2 p.a/2],[p.yt p.yt],'LineStyle','-.','Color','r','LineWidth',1.5);
+
+    incidentHandle = quiver(0,p.yb-0.13*(p.yt-p.yb),0,0.10*(p.yt-p.yb),0, ...
+        'b','LineWidth',2.5,'MaxHeadSize',0.8,'AutoScale','off');
+    text(0,p.yb-0.18*(p.yt-p.yb),'Incident wave','HorizontalAlignment','center', ...
+        'Color','b','FontWeight','bold');
+
+    text(-p.a/2,p.yt+0.10*(p.yt-p.yb),'Periodic x=-a/2', ...
+        'HorizontalAlignment','center','FontSize',9);
+    text(p.a/2,p.yt+0.10*(p.yt-p.yb),'Periodic x=+a/2', ...
+        'HorizontalAlignment','center','FontSize',9);
+    text(-p.a*0.42,p.yb,'Absorbing boundary \Gamma_b','HorizontalAlignment','left', ...
+        'VerticalAlignment','bottom','Color','r','FontSize',9);
+    text(-p.a*0.42,p.yt,'Absorbing boundary \Gamma_t','HorizontalAlignment','left', ...
+        'VerticalAlignment','top','Color','r','FontSize',9);
+
     axis equal;
-    xlim([-1.3*p.a/2 1.3*p.a/2]);
-    ylim([p.yb-0.15*(p.yt-p.yb) p.yt+0.15*(p.yt-p.yb)]);
+    xlim([-0.72*p.a 0.72*p.a]);
+    ylim([1.16*p.yb 1.22*p.yt]);
     xlabel('x (nm)');
     ylabel('y (nm)');
     xticklabels(xticks*1e9);
     yticklabels(yticks*1e9);
-    title('Computational unit cell');
-    legend({'Air domain','Dielectric cylinder','Periodic axis','Incident wave','Reflected wave','Transmitted wave'}, ...
-        'Location','northoutside','Orientation','horizontal');
-    exportgraphics(gcf,fullfile(outdir,'geometry.png'),'Resolution',300);
-    close(gcf);
+    title('Computational Unit Cell with Boundary Conditions');
+
+    airDummy = patch(NaN,NaN,[0.95 0.98 1],'EdgeColor','k','LineWidth',1.5);
+    cylinderDummy = patch(NaN,NaN,[0.7 0.85 1],'EdgeColor','b','LineWidth',1.5);
+    boundaryDummy = plot(NaN,NaN,'--k','LineWidth',1.5);
+    absorbingDummy = plot(NaN,NaN,'-.r','LineWidth',1.5);
+    incidentDummy = quiver(NaN,NaN,0,1,0,'b','LineWidth',2.5, ...
+        'MaxHeadSize',1,'AutoScale','off');
+    legend([airDummy cylinderDummy boundaryDummy absorbingDummy incidentDummy], ...
+        {'Air domain','Dielectric cylinder','Periodic boundaries (left/right)', ...
+        'Absorbing boundaries (top/bottom)','Incident wave'}, ...
+        'Location','southoutside','Orientation','horizontal','Box','off','NumColumns',3);
+    set(gca,'Position',[0.18 0.20 0.64 0.68]);
+    exportgraphics(gcf,fullfile(outdir,'geometry.png'), ...
+        'Resolution',300,'ContentType','image');
 end
 
 function draw_mesh(nodes, triangles, p, filename)
-    figure('Visible','off','Position',[100 100 900 650]);
+    figure('Visible','on','Position',[100 100 1100 800]);
+    clf;
     patch('Faces',triangles,'Vertices',[nodes(:,1)*1e9 nodes(:,2)*1e9], ...
         'FaceColor',[0.95 0.98 1],'EdgeColor',[0.2 0.2 0.2],'LineWidth',0.15);
     view(2); axis equal; grid off;
@@ -157,8 +183,23 @@ function draw_mesh(nodes, triangles, p, filename)
     plot(p.r*cos(th)*1e9,p.r*sin(th)*1e9,'b','LineWidth',2);
     xlabel('x (nm)'); ylabel('y (nm)');
     title('Triangular finite-element mesh');
-    exportgraphics(gcf,filename,'Resolution',300);
-    close(gcf);
+    xlim([-p.a/2*1e9 p.a/2*1e9]);
+    ylim([p.yb*1e9 p.yt*1e9]);
+    set(gca,'Position',[0.10 0.13 0.58 0.78]);
+
+    axes('Position',[0.68 0.18 0.25 0.30]);
+    patch('Faces',triangles,'Vertices',[nodes(:,1)*1e9 nodes(:,2)*1e9], ...
+        'FaceColor',[0.95 0.98 1],'EdgeColor',[0.2 0.2 0.2],'LineWidth',0.55);
+    hold on;
+    plot(p.r*cos(th)*1e9,p.r*sin(th)*1e9,'b','LineWidth',1.5);
+    axis equal;
+    xlim([0 1.45*p.r*1e9]);
+    ylim([0 1.45*p.r*1e9]);
+    box on;
+    title('Upper-right cylinder quarter','FontSize',9);
+    set(gca,'FontSize',8);
+
+    exportgraphics(gcf,filename,'Resolution',300,'ContentType','image');
 end
 
 function print_mesh_statistics(nodes, triangles)
@@ -339,7 +380,7 @@ function [Hx, Hy] = magnetic_field(nodes, triangles, U, omega, mu, gradU)
 end
 
 function draw_spectrum(wavelength_nm, R, T, A, filename)
-    figure('Visible','off','Position',[100 100 900 600]);
+    figure('Visible','on','Position',[100 100 900 600]);
     plot(wavelength_nm,R,'b-o','LineWidth',1.5,'MarkerSize',3); hold on;
     plot(wavelength_nm,T,'r-s','LineWidth',1.5,'MarkerSize',3);
     plot(wavelength_nm,A,'k-d','LineWidth',1.5,'MarkerSize',3);
@@ -349,43 +390,137 @@ function draw_spectrum(wavelength_nm, R, T, A, filename)
     legend('Reflection R','Transmission T','Absorption A','Location','best');
     title('Periodic-cylinder spectral response');
     exportgraphics(gcf,filename,'Resolution',300);
-    close(gcf);
 end
 
 function draw_fields(nodes, triangles, Ez, Hx, Hy, p, outdir)
-    xnm = reshape(nodes(:,1)*1e9,[]);
-    ynm = reshape(nodes(:,2)*1e9,[]);
+    vertices = full(nodes(:,1:2))*1e9;
+    triangles = full(triangles);
+    Ez = full(Ez(:));
+    Hx = full(Hx(:));
+    Hy = full(Hy(:));
 
-    figure('Visible','off','Position',[100 100 900 650]);
-    patch('Faces',triangles,'Vertices',[xnm ynm],'FaceVertexCData',abs(Ez), ...
+    figure('Visible','on','Position',[100 100 900 650]);
+    patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData',full(abs(Ez)), ...
         'FaceColor','interp','EdgeColor','none');
+    hold on;
+    overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('|E_z| at 550 nm');
     exportgraphics(gcf,fullfile(outdir,'electric_field_magnitude.png'),'Resolution',300);
-    close(gcf);
 
-    figure('Visible','off','Position',[100 100 900 650]);
-    patch('Faces',triangles,'Vertices',[xnm ynm],'FaceVertexCData',real(Ez), ...
+    figure('Visible','on','Position',[100 100 900 650]);
+    patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData',full(real(Ez)), ...
         'FaceColor','interp','EdgeColor','none');
+    hold on;
+    overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('Re(E_z) at 550 nm');
     exportgraphics(gcf,fullfile(outdir,'electric_field_real.png'),'Resolution',300);
-    close(gcf);
 
-    figure('Visible','off','Position',[100 100 900 650]);
-    patch('Faces',triangles,'Vertices',[xnm ynm],'FaceVertexCData',sqrt(abs(Hx).^2+abs(Hy).^2), ...
+    figure('Visible','on','Position',[100 100 900 650]);
+    patch('Faces',triangles,'Vertices',vertices,'FaceVertexCData', ...
+        full(sqrt(abs(Hx).^2+abs(Hy).^2)), ...
         'FaceColor','interp','EdgeColor','none');
     hold on;
-    quiver(nodes(:,1)*1e9,nodes(:,2)*1e9,real(Hx),real(Hy),0.6,'k','LineWidth',0.25);
+    quiver(vertices(:,1),vertices(:,2),full(real(Hx)),full(real(Hy)), ...
+        0.6,'k','LineWidth',0.25);
+    overlay_cylinder_and_boundaries(p);
     axis equal; colorbar; xlabel('x (nm)'); ylabel('y (nm)');
     title('|H| and in-plane magnetic-field vectors at 550 nm');
     exportgraphics(gcf,fullfile(outdir,'magnetic_field.png'),'Resolution',300);
-    close(gcf);
+
+    figure('Visible','on','Position',[100 100 1400 650]);
+    tiledlayout(1,2,'Padding','compact','TileSpacing','compact');
+
+    nexttile;
+    draw_three_cell_patch(nodes, triangles, abs(Ez), p);
+    title('Electric-field magnitude |E_z|');
+    xlabel('x (nm)');
+    ylabel('y (nm)');
+
+    nexttile;
+    draw_three_cell_patch(nodes, triangles, sqrt(abs(Hx).^2+abs(Hy).^2), p);
+    hold on;
+    draw_three_cell_vectors(nodes, Hx, Hy, p);
+    title('Magnetic-field magnitude |H|');
+    xlabel('x (nm)');
+
+    exportgraphics(gcf,fullfile(outdir,'electric_magnetic_three_cells.png'), ...
+        'Resolution',300,'ContentType','image');
 end
 
-function run_mesh_convergence(p, lambda0, outdir)
+function overlay_cylinder_and_boundaries(p)
+    th = linspace(0,2*pi,200);
+    plot(p.r*cos(th)*1e9,p.r*sin(th)*1e9, ...
+        '--','Color',[0.15 0.15 0.15],'LineWidth',1.25);
+
+    xL = -p.a/2*1e9;
+    xR = p.a/2*1e9;
+    yB = p.yb*1e9;
+    yT = p.yt*1e9;
+    line([xL xL],[yB yT],'Color',[0.1 0.1 0.1], ...
+        'LineStyle','--','LineWidth',1.0);
+    line([xR xR],[yB yT],'Color',[0.1 0.1 0.1], ...
+        'LineStyle','--','LineWidth',1.0);
+end
+
+function draw_three_cell_patch(nodes, triangles, cdata, p)
+    nNodes = size(nodes,1);
+    offsets = [-p.a 0 p.a]*1e9;
+    vertices = zeros(3*nNodes,2);
+    faces = zeros(3*size(triangles,1),3);
+    repeatedCdata = zeros(3*nNodes,1);
+
+    for icell = 1:3
+        vr = (icell-1)*nNodes+1:icell*nNodes;
+        vertices(vr,:) = [nodes(:,1)*1e9+offsets(icell) nodes(:,2)*1e9];
+        fr = (icell-1)*size(triangles,1)+1:icell*size(triangles,1);
+        faces(fr,:) = triangles+(icell-1)*nNodes;
+        repeatedCdata(vr) = cdata;
+    end
+
+    patch('Faces',faces,'Vertices',vertices,'FaceVertexCData',repeatedCdata, ...
+        'FaceColor','interp','EdgeColor','none');
+    hold on;
+
+    th = linspace(0,2*pi,200);
+    for xc = offsets
+        plot(xc+p.r*cos(th)*1e9,p.r*sin(th)*1e9, ...
+            '--','Color',[0.10 0.10 0.10],'LineWidth',1.1);
+    end
+
+    yB = p.yb*1e9;
+    yT = p.yt*1e9;
+    for xb = (-1.5*p.a:0.5*p.a:1.5*p.a)*1e9
+        line([xb xb],[yB yT],'Color',[0.15 0.15 0.15], ...
+            'LineStyle','--','LineWidth',0.9);
+    end
+    line([-1.5*p.a*1e9 1.5*p.a*1e9],[yB yB], ...
+        'Color',[0.15 0.15 0.15],'LineStyle','--','LineWidth',0.9);
+    line([-1.5*p.a*1e9 1.5*p.a*1e9],[yT yT], ...
+        'Color',[0.15 0.15 0.15],'LineStyle','--','LineWidth',0.9);
+
+    axis equal;
+    xlim([-1.5*p.a*1e9 1.5*p.a*1e9]);
+    ylim([p.yb*1e9 p.yt*1e9]);
+    colorbar;
+    box on;
+end
+
+function draw_three_cell_vectors(nodes, Hx, Hy, p)
+    step = max(1,round(size(nodes,1)/250));
+    selected = 1:step:size(nodes,1);
+    for icell = [-1 0 1]
+        quiver(nodes(selected,1)*1e9+icell*p.a*1e9, ...
+            nodes(selected,2)*1e9,real(Hx(selected)),real(Hy(selected)), ...
+            0.6,'k','LineWidth',0.25);
+    end
+end
+
+function run_mesh_convergence(p, lambda0, outdir, nx, ny)
     k0 = 2*pi/lambda0;
-    cases = [21 17;31 27;41 37;61 51];
+    meshScales = [0.5; 0.75; 1; 1.25; 1.5; 2];
+    cases = max(3,round(meshScales*[nx ny]));
     Tval = zeros(size(cases,1),1);
     ndof = zeros(size(cases,1),1);
     nelem = zeros(size(cases,1),1);
@@ -404,11 +539,10 @@ function run_mesh_convergence(p, lambda0, outdir)
         'VariableNames',{'Nodes','Triangles','Transmission'}), ...
         fullfile(outdir,'mesh_convergence.csv'));
 
-    figure('Visible','off','Position',[100 100 900 600]);
+    figure('Visible','on','Position',[100 100 900 600]);
     plot(ndof,Tval,'b-o','LineWidth',1.5,'MarkerSize',7); grid on;
     xlabel('Number of nodes');
     ylabel('Transmission at 550 nm');
     title('Mesh-convergence study');
     exportgraphics(gcf,fullfile(outdir,'mesh_convergence.png'),'Resolution',300);
-    close(gcf);
 end
